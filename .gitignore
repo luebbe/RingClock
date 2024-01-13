@@ -1,0 +1,6 @@
+.pio
+.vscode
+**/Secrets.h
+**/Version.h
+version
+.version_no_increment
