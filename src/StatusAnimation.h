@@ -15,7 +15,8 @@ enum CLOCK_STATUS
     WIFI_DISCONNECTED,
     WIFI_CONNECTED,
     MQTT_DISCONNECTED,
-    MQTT_CONNECTED
+    MQTT_CONNECTED,
+    OPERATIONAL
 };
 
 class StatusAnimation : public LedEffect

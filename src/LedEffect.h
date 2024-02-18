@@ -36,17 +36,22 @@ public:
 		_currentPalette = value;
 		paint(true);
 	}
+
 	void setPixel(int index, uint8_t r, uint8_t g, uint8_t b)
 	{
-		DEBUG_PRINTF("%d %d %d", r, g, b);
-
-		_leds[(index + STARTPIXEL) % 60] = CRGB(r, g, b);
+		// DEBUG_PRINTF("%d->%d %d %d\r\n", index, r, g, b);
+		_leds[(index + STARTPIXEL) % _numLeds] = CRGB(r, g, b);
 	}
 
 	void setPixel(int index, CRGB color)
 	{
-		DEBUG_PRINTF("%d %d %d", color.r, color.g, color.b);
+		// DEBUG_PRINTF("%d->r:%d g:%d b:%d\r\n", index, color.r, color.g, color.b);
+		_leds[(index + STARTPIXEL) % _numLeds] = color;
+	}
 
-		_leds[(index + STARTPIXEL) % 60] = color;
+	void setPixel(int index, CHSV color)
+	{
+		// DEBUG_PRINTF("%d->h:%d s:%d v:%d\r\n", index, color.h, color.s, color.v);
+		_leds[(index + STARTPIXEL) % _numLeds] = color;
 	}
 };

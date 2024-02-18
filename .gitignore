@@ -4,3 +4,4 @@
 **/Version.h
 version
 .version_no_increment
+platformio_version_increment

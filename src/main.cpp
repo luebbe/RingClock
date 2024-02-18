@@ -3,12 +3,15 @@
 #include <Ticker.h>
 #include <espMqttClient.h>
 #include <BH1750.h>
+#include <MedianFilterLib.h>
+#include <MeanFilterLib.h>
 
 #include "OtaHelper.h"
 #include "TimeHelper.h"
 #include "StatusAnimation.h"
 #include "ClockSimple.h"
 #include "ClockAdafruit.h"
+#include "ClockLight.h"
 
 #include "HaMqttConfigBuilder.h"
 
@@ -41,6 +44,9 @@
 #define SEND_LIGHT_INTERVAL 5000UL  // Send light level every 5 seconds
 #define CHECK_LIGHT_INTERVAL 50UL   // Check light level 20 times per second
 
+#define MEDIAN_WND 7 // A median filter window size of seven should be enough to filter out most spikes
+#define MEAN_WND 7   // After filtering the spikes we don't need many samples anymore for the average
+
 #define NUM_LEDS 60
 
 CRGB leds[NUM_LEDS];
@@ -49,12 +55,17 @@ LedEffect *_ledEffect = nullptr;
 
 BH1750 lightMeter;
 
+MedianFilter<float> medianFilterLDR(MEDIAN_WND); 
+MeanFilter<float> meanFilterLDR(MEAN_WND); 
+
+
 // Declare the different display modes
 OtaHelper otaHelper(leds, NUM_LEDS);
 StatusAnimation statusAnimation(leds, NUM_LEDS);
 
 ClockSimple clockSimple(leds, NUM_LEDS, onGetTime);
 ClockAdafruit clockAdafruit(leds, NUM_LEDS, onGetTime);
+ClockLight clockLight(leds, NUM_LEDS, onGetTime);
 
 WiFiEventHandler wifiConnectHandler;
 WiFiEventHandler wifiDisconnectHandler;
@@ -215,7 +226,9 @@ void setMode(String mode)
     //   _ledEffect = &snakeAnimation;
     // else
     {
-      _ledEffect = &clockAdafruit;
+      // _ledEffect = &clockAdafruit;
+      // _ledEffect = &clockSimple;
+      _ledEffect = &clockLight;
       mode = "Clock";
     }
 
@@ -309,6 +322,8 @@ void onMqttConnect(bool sessionPresent)
 
   setPalette("Rainbow");
   setMode("Clock");
+
+  statusAnimation.setStatus(CLOCK_STATUS::OPERATIONAL); 
 }
 
 void onMqttDisconnect(espMqttClientTypes::DisconnectReason reason)
@@ -386,6 +401,9 @@ void adjustBrightness(float lux)
     lux = DAYLIGHT_LUX;
   }
 
+  // Apply filtering to get rid of spikes
+  lux = meanFilterLDR.AddValue(medianFilterLDR.AddValue(lux));
+
   // scale to 1..255
   uint8_t brightness = round(lux * 255 / DAYLIGHT_LUX);
 
@@ -403,14 +421,6 @@ void setMTreg(uint8_t mtReg)
   {
     _mtReg = mtReg;
     lightMeter.setMTreg(mtReg);
-    // if (lightMeter.setMTreg(mtReg))
-    // {
-    //   DEBUG_PRINTF(Setting MTReg to %d\r\n", mtReg);
-    // }
-    // else
-    // {
-    //   DEBUG_PRINTF(Error setting MTReg to %d\r\n", mtReg);
-    // }
   }
 }
 
